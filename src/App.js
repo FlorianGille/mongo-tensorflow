@@ -5,6 +5,7 @@ import { arround, convertByte, formatPercent, getUnitFromByte, toBase64 } from "
 import rightArrow from './assets/images/arrow-right.svg'
 import fileSolid from './assets/images/file-solid.svg'
 import pollH from './assets/images/poll-h-solid.svg'
+import Loader from "./components/Loader";
 require('@tensorflow/tfjs-backend-cpu');
 require('@tensorflow/tfjs-backend-webgl');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
@@ -14,6 +15,7 @@ const App = () => {
   const [tensorflows, setTensorflows] = useState([]);
   const [selectedImage, setSelectedImage] = useState();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingRes, setIsLoadingRes] = useState(false);
 
   // Fetch tensorflows from API
   // result: []
@@ -42,13 +44,17 @@ const App = () => {
 
 
   const detectImg = async () => {
-    //get image file here !
-    // const img = document.getElementById('img');
+    const img = new Image();
+    img.src = selectedImage;
+
+    setIsLoadingRes(true)
 
     const model = await cocoSsd.load();
-    // const model = await mobilenet.load();
+    const predictions = await model.detect(img).then(
+      setIsLoadingRes(false)
+    );
 
-    const predictions = await model.detect(img);
+    // const model = await mobilenet.load();
     // const predictions = await model.classify(img);
     console.log('Predictions: ');
     console.log(predictions);
@@ -64,7 +70,12 @@ const App = () => {
           </div>
           <div className="right-part">
             <div className="arrow">
-              <img src={rightArrow} alt="" />
+              {isLoadingRes ? (
+                  <Loader/>
+                ) : (
+                  <img src={rightArrow} alt="" onClick={detectImg} />
+                )
+              }
             </div>
             <div className="results">
 
@@ -74,7 +85,7 @@ const App = () => {
         <div className="history">
           <h1>Historique</h1>
           {isLoading && (
-            <p>Loading...</p>
+            <Loader />
           )}
           {tensorflows && !isLoading && tensorflows.map((tensorflow, index) => (
             <div key={index}>
