@@ -52,10 +52,20 @@ h1 {
   flex: 1;
   justify-content: center;
   height: calc(100% - 63px);
+  align-items: center;
+}
+
+.disable:hover {
+  cursor: not-allowed !important;
+}
+
+.arrow > img:hover {
+  cursor: pointer;
 }
 
 .arrow > img {
   width: 40px;
+  height: 40px;
 }
 
 .selected-img {
@@ -86,16 +96,34 @@ input {
   display: none;
 }
 
-.line {
+.line-content {
   display: flex;
 }
 
-.line > img {
+.line-content > img {
   width: 16px;
 }
 
-.line > p{
+.line-content > p{
   margin-left: 20px;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  background-color: #e8e8e8;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-top: 25px;
+  border-radius: 5px;
+}
+
+.line > img {
+  width: 20px
+}
+
+.line > img:hover {
+  cursor: pointer;
 }
 
 .sub-line {

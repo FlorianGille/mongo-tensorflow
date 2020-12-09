@@ -1,21 +1,25 @@
 import "./App.css";
 import { useCallback, useEffect, useState } from "react";
-import { getTensorflows } from "./services/tensorflow";
+import { createTensorflows, deleteTensorflows, getTensorflows } from "./services/tensorflow";
 import { arround, convertByte, formatPercent, getUnitFromByte, toBase64 } from "./services/utils";
 import rightArrow from './assets/images/arrow-right.svg'
 import fileSolid from './assets/images/file-solid.svg'
+import trashSolid from './assets/images/trash-solid.svg'
 import pollH from './assets/images/poll-h-solid.svg'
 import Loader from "./components/Loader";
 require('@tensorflow/tfjs-backend-cpu');
 require('@tensorflow/tfjs-backend-webgl');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
+const mobilen = require('@tensorflow-models/mobilenet');
 
 const App = () => {
   // States
   const [tensorflows, setTensorflows] = useState([]);
   const [selectedImage, setSelectedImage] = useState();
+  const [selectedFile, setSelectedFile] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRes, setIsLoadingRes] = useState(false);
+  const [results, setResults] = useState([]);
 
   // Fetch tensorflows from API
   // result: []
@@ -40,25 +44,80 @@ const App = () => {
     const file = event.target.files[0];
     console.log(file)
     setSelectedImage(await toBase64(file))
+    setSelectedFile(file)
   }
-
 
   const detectImg = async () => {
-    const img = new Image();
-    img.src = selectedImage;
+    if (selectedImage) {
+      const img = new Image();
+      img.src = selectedImage;
+      setIsLoadingRes(true)
 
-    setIsLoadingRes(true)
+      const [coco, mobilenet] = await Promise.all([
+        cocoSsd.load(),
+        mobilen.load()
+      ])
 
-    const model = await cocoSsd.load();
-    const predictions = await model.detect(img).then(
+      const [predCoco, predMobile] = await Promise.all([
+        coco.detect(img),
+        mobilenet.classify(img)
+      ]);
+
+      // const predictions = await model.classify(img);
+      console.log('Predictions: ');
+      console.log(predCoco);
+      let predictions = predCoco.map(pred => ({ type: pred.class, percent: pred.score }))
+      if (!predCoco || predCoco.length === 0) {
+        console.log(predMobile);
+        predictions = [
+          ...predictions,
+          ...predMobile.map(pred => ({ type: pred.className, percent: pred.probability }))
+        ]
+      }
+      console.log(predictions)
+      setResults(predictions)
       setIsLoadingRes(false)
-    );
-
-    // const model = await mobilenet.load();
-    // const predictions = await model.classify(img);
-    console.log('Predictions: ');
-    console.log(predictions);
+      await createTensorflow(predictions)
+    }
   }
+
+  const createTensorflow = async (currentResults) => {
+    console.log({
+      name: selectedFile.name,
+      weight: selectedFile.size,
+      date: selectedFile.lastModifiedDate,
+      results: [
+        ...currentResults
+      ]
+    })
+    const data = await createTensorflows({
+      name: selectedFile.name,
+      weight: selectedFile.size,
+      date: selectedFile.lastModifiedDate,
+      results: [
+        ...currentResults
+      ]
+    })
+
+    if (!data || !data.data) {
+      return
+    }
+
+    await fetchData()
+    // CONFETTI
+    console.log('CONFETII')
+  }
+
+  const handleDelete = (id) => async () => {
+    console.log({ id })
+    const data = await deleteTensorflows(id);
+
+    if (!data || !data.data) {
+      return
+    }
+    await fetchData()
+  }
+
   return (
     <div className="App">
       <div className="content">
@@ -73,12 +132,17 @@ const App = () => {
               {isLoadingRes ? (
                   <Loader/>
                 ) : (
-                  <img src={rightArrow} alt="" onClick={detectImg} />
+                  <img src={rightArrow} className={`${isLoadingRes || !selectedImage ? 'disable' : ''}`} alt="" onClick={detectImg} />
                 )
               }
             </div>
             <div className="results">
-
+              {results && results.length > 0 && results.map((result, index) => (
+                <div key={index}>
+                  <p>{result.type}</p>
+                  <p>{formatPercent(result.percent)}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -90,10 +154,13 @@ const App = () => {
           {tensorflows && !isLoading && tensorflows.map((tensorflow, index) => (
             <div key={index}>
               <div className="line">
-                <img src={fileSolid} alt="" />
-                <p>{tensorflow.name}</p>
-                <p>{arround(convertByte(tensorflow.weight, getUnitFromByte(tensorflow.weight)))} {getUnitFromByte(tensorflow.weight)}</p>
-                <p>{tensorflow.date}</p>
+                <div className="line-content">
+                  <img src={fileSolid} alt="" />
+                  <p>{tensorflow.name}</p>
+                  <p>{arround(convertByte(tensorflow.weight, getUnitFromByte(tensorflow.weight)))} {getUnitFromByte(tensorflow.weight)}</p>
+                  <p>{tensorflow.date}</p>
+                </div>
+                <img src={trashSolid} alt="" onClick={handleDelete(tensorflow._id)}/>
               </div>
               {tensorflow && tensorflow.results.map((result, index) => (
                 <div className="sub-line" key={`sub-line-${index}`}>
