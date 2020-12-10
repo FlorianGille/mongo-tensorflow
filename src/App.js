@@ -94,18 +94,10 @@ const App = () => {
   }
 
   const createTensorflow = async (currentResults) => {
-    console.log({
-      name: selectedFile.name,
-      weight: selectedFile.size,
-      date: selectedFile.lastModifiedDate,
-      results: [
-        ...currentResults
-      ]
-    })
     const data = await createTensorflows({
       name: selectedFile.name,
       weight: selectedFile.size,
-      date: selectedFile.lastModifiedDate,
+      date: dayjs(),
       results: [
         ...currentResults
       ]
