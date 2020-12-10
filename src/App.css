@@ -45,6 +45,11 @@ h1 {
   height: 300px;
   background-color: #C4C4C4;
   border-radius: 10px;
+  overflow: auto;
+}
+
+.results {
+  text-align: center;
 }
 
 .arrow {
@@ -116,6 +121,11 @@ input {
   padding-right: 10px;
   margin-top: 25px;
   border-radius: 5px;
+  animation: slide-out-right 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+}
+
+.line:hover {
+  cursor: pointer;
 }
 
 .line > img {
@@ -139,4 +149,43 @@ input {
 
 .sub-line > p {
   margin-left: 20px;
+}
+
+.result {
+  border-bottom: 1px solid #e4e4e4;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.results::-webkit-scrollbar-thumb {
+  background: rgb(172, 172, 172);
+  border-radius: 45px;
+}
+
+.results::-webkit-scrollbar-thumb:hover  {
+  background: rgb(92, 92, 92);
+}
+
+.results::-webkit-scrollbar {
+  width: 3px;
+  height: 10px;
+}
+
+.first-result {
+  font-size: 20px;
+}
+
+.arrow > img {
+  animation: test 1s alternate infinite cubic-bezier(0.8, 0.04, 0.54, 0.48);
+}
+
+@keyframes test {
+  0% {
+      transform: scale(1.0);
+  }
+  100% {
+      transform: scale(1.2);
+  }
 }

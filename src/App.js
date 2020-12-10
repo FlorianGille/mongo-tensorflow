@@ -7,10 +7,26 @@ import fileSolid from './assets/images/file-solid.svg'
 import trashSolid from './assets/images/trash-solid.svg'
 import pollH from './assets/images/poll-h-solid.svg'
 import Loader from "./components/Loader";
+import Confetti from "react-dom-confetti";
+import dayjs from "dayjs";
 require('@tensorflow/tfjs-backend-cpu');
 require('@tensorflow/tfjs-backend-webgl');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
 const mobilen = require('@tensorflow-models/mobilenet');
+
+const config = {
+  angle: 90,
+  spread: 360,
+  startVelocity: 40,
+  elementCount: 70,
+  dragFriction: 0.12,
+  duration: 3000,
+  stagger: 3,
+  width: "10px",
+  height: "10px",
+  perspective: "500px",
+  colors: ["#a864fd", "#29cdff", "#78ff44", "#ff718d", "#fdff6a"]
+};
 
 const App = () => {
   // States
@@ -19,6 +35,7 @@ const App = () => {
   const [selectedFile, setSelectedFile] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRes, setIsLoadingRes] = useState(false);
+  const [isCollapse, setIsCollapse] = useState({});
   const [results, setResults] = useState([]);
 
   // Fetch tensorflows from API
@@ -63,18 +80,13 @@ const App = () => {
         mobilenet.classify(img)
       ]);
 
-      // const predictions = await model.classify(img);
-      console.log('Predictions: ');
-      console.log(predCoco);
       let predictions = predCoco.map(pred => ({ type: pred.class, percent: pred.score }))
       if (!predCoco || predCoco.length === 0) {
-        console.log(predMobile);
         predictions = [
           ...predictions,
           ...predMobile.map(pred => ({ type: pred.className, percent: pred.probability }))
         ]
       }
-      console.log(predictions)
       setResults(predictions)
       setIsLoadingRes(false)
       await createTensorflow(predictions)
@@ -104,12 +116,9 @@ const App = () => {
     }
 
     await fetchData()
-    // CONFETTI
-    console.log('CONFETII')
   }
 
   const handleDelete = (id) => async () => {
-    console.log({ id })
     const data = await deleteTensorflows(id);
 
     if (!data || !data.data) {
@@ -129,6 +138,7 @@ const App = () => {
           </div>
           <div className="right-part">
             <div className="arrow">
+              <Confetti active={ !isLoadingRes } config={ config }/>
               {isLoadingRes ? (
                   <Loader/>
                 ) : (
@@ -138,9 +148,9 @@ const App = () => {
             </div>
             <div className="results">
               {results && results.length > 0 && results.map((result, index) => (
-                <div key={index}>
-                  <p>{result.type}</p>
-                  <p>{formatPercent(result.percent)}</p>
+                <div className="result" key={index}>
+                  <p className={`${index === 0 ? 'first-result' : ''}`}>{result.type}</p>
+                  <p className={`${index === 0 ? 'first-result' : ''}`}>{formatPercent(result.percent)}</p>
                 </div>
               ))}
             </div>
@@ -153,16 +163,16 @@ const App = () => {
           )}
           {tensorflows && !isLoading && tensorflows.map((tensorflow, index) => (
             <div key={index}>
-              <div className="line">
+              <div className="line" onClick={() => setIsCollapse({ ...isCollapse, [tensorflow._id]: !isCollapse[tensorflow._id]})}>
                 <div className="line-content">
                   <img src={fileSolid} alt="" />
                   <p>{tensorflow.name}</p>
                   <p>{arround(convertByte(tensorflow.weight, getUnitFromByte(tensorflow.weight)))} {getUnitFromByte(tensorflow.weight)}</p>
-                  <p>{tensorflow.date}</p>
+                  <p>{dayjs(tensorflow.date).format('DD/MM/YYYY')}</p>
                 </div>
                 <img src={trashSolid} alt="" onClick={handleDelete(tensorflow._id)}/>
               </div>
-              {tensorflow && tensorflow.results.map((result, index) => (
+              {!isCollapse[tensorflow._id] && tensorflow && tensorflow.results.map((result, index) => (
                 <div className="sub-line" key={`sub-line-${index}`}>
                   <img src={pollH} alt="" />
                   <p>{result.type}</p>
