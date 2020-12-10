@@ -129,7 +129,8 @@ input {
 }
 
 .line > img {
-  width: 20px
+  width: 20px;
+  z-index: 1;
 }
 
 .line > img:hover {
