@@ -9,10 +9,14 @@ import pollH from './assets/images/poll-h-solid.svg'
 import Loader from "./components/Loader";
 import Confetti from "react-dom-confetti";
 import dayjs from "dayjs";
+import * as tf from '@tensorflow/tfjs';
+import * as tmImage from '@teachablemachine/image';
 require('@tensorflow/tfjs-backend-cpu');
 require('@tensorflow/tfjs-backend-webgl');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
 const mobilen = require('@tensorflow-models/mobilenet');
+const URL = "https://teachablemachine.withgoogle.com/models/4TBBxa5Av/";
+
 
 const config = {
   angle: 90,
@@ -65,27 +69,40 @@ const App = () => {
   }
 
   const detectImg = async () => {
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
+
     if (selectedImage) {
       const img = new Image();
       img.src = selectedImage;
       setIsLoadingRes(true)
 
-      const [coco, mobilenet] = await Promise.all([
+      const [coco, mobilenet, custom] = await Promise.all([
         cocoSsd.load(),
-        mobilen.load()
+        mobilen.load(),
+        tmImage.load(modelURL, metadataURL)
       ])
 
-      const [predCoco, predMobile] = await Promise.all([
+      const [predCoco, predMobile, predCustom] = await Promise.all([
         coco.detect(img),
-        mobilenet.classify(img)
+        mobilenet.classify(img),
+        custom.predict(img)
       ]);
 
-      let predictions = predCoco.map(pred => ({ type: pred.class, percent: pred.score }))
-      if (!predCoco || predCoco.length === 0) {
+      let predictions = predCustom.map(pred => ({ type: pred.className, percent: pred.probability }))
+
+      if (!predCustom || predCustom.length === 0 || predCustom[0].probability < predCustom[1].probability) {
+        predictions = []
         predictions = [
           ...predictions,
-          ...predMobile.map(pred => ({ type: pred.className, percent: pred.probability }))
+          ...predCoco.map(pred => ({ type: pred.class, percent: pred.score }))
         ]
+        if (!predCoco || predCoco.length === 0) {
+          predictions = [
+            ...predictions,
+            ...predMobile.map(pred => ({ type: pred.className, percent: pred.probability }))
+          ]
+        }
       }
       setResults(predictions)
       setIsLoadingRes(false)
