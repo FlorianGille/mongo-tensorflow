@@ -1,10 +1,11 @@
 import "./App.css";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createTensorflows, deleteTensorflows, getTensorflows } from "./services/tensorflow";
 import { arround, convertByte, formatPercent, getUnitFromByte, toBase64 } from "./services/utils";
 import rightArrow from './assets/images/arrow-right.svg'
 import fileSolid from './assets/images/file-solid.svg'
 import trashSolid from './assets/images/trash-solid.svg'
+import close from './assets/images/times-circle-solid.svg'
 import pollH from './assets/images/poll-h-solid.svg'
 import Loader from "./components/Loader";
 import Confetti from "react-dom-confetti";
@@ -41,12 +42,13 @@ const App = () => {
   const [isLoadingRes, setIsLoadingRes] = useState(false);
   const [isCollapse, setIsCollapse] = useState({});
   const [results, setResults] = useState([]);
+  const ref = useRef();
 
   // Fetch tensorflows from API
   // result: []
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (filterDate) => {
     setIsLoading(true)
-    const data = await getTensorflows();
+    const data = await getTensorflows(filterDate);
     setIsLoading(false)
     if (!data || !data.data) {
       return;
@@ -55,7 +57,7 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    fetchData();
+    fetchData(dayjs().format('YYYY-MM-DD'));
   }, [fetchData]);
 
 
@@ -63,7 +65,6 @@ const App = () => {
   // Set the image
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
-    console.log(file)
     setSelectedImage(await toBase64(file))
     setSelectedFile(file)
   }
@@ -115,7 +116,7 @@ const App = () => {
     const data = await createTensorflows({
       name: selectedFile.name,
       weight: selectedFile.size,
-      date: dayjs(),
+      date: dayjs().format('DD-MM-YYYY'),
       results: [
         ...currentResults
       ]
@@ -167,7 +168,22 @@ const App = () => {
           </div>
         </div>
         <div className="history">
-          <h1>Historique</h1>
+          <div className="header">
+            <h1>Historique</h1>
+            <div className="header-right">
+              <input
+                defaultValue={dayjs().format('YYYY-MM-DD')}
+                ref={ref} type="date"
+                onChange={async (e) => {
+                  await fetchData(dayjs(e.target.value).format('DD-MM-YYYY'))
+                }}
+              />
+              <img src={close} alt="" onClick={async () => {
+                ref.current.value = null
+                await fetchData()
+              }} />
+            </div>
+          </div>
           {isLoading && (
             <Loader />
           )}
@@ -178,7 +194,7 @@ const App = () => {
                   <img src={fileSolid} alt="" />
                   <p>{tensorflow.name}</p>
                   <p>{arround(convertByte(tensorflow.weight, getUnitFromByte(tensorflow.weight)))} {getUnitFromByte(tensorflow.weight)}</p>
-                  <p>{dayjs(tensorflow.date).format('DD/MM/YYYY')}</p>
+                  <p>{tensorflow.date.replaceAll('-', '/')}</p>
                 </div>
                 <img src={trashSolid} alt="" onClick={handleDelete(tensorflow._id)}/>
               </div>

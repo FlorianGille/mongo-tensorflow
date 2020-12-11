@@ -1,6 +1,6 @@
 import Axios from 'axios';
 
-export const getTensorflows = async () => await Axios.get(`http://localhost:3000/api/tensorflow`)
+export const getTensorflows = async (filterDate) => await Axios.get(`http://localhost:3000/api/tensorflow${filterDate ? `?filter=${filterDate}` : ``}`)
 
 export const updateTensorflows = async (tensorflowId) => await Axios.put(`http://localhost:3000/api/tensorflow/${tensorflowId}/edit`, {})
 
