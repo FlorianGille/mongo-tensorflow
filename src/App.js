@@ -57,7 +57,7 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    fetchData(dayjs().format('YYYY-MM-DD'));
+    fetchData(dayjs().format('DD-MM-YYYY'));
   }, [fetchData]);
 
 
