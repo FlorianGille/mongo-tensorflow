@@ -90,7 +90,7 @@ const App = () => {
       ]);
 
       let predictions = predCustom.map(pred => ({ type: pred.className, percent: pred.probability }))
-
+      if(predictions[1].percent < 0 + 0.001) { predictions.splice(1, 1) }
       if (!predCustom || predCustom.length === 0 || predCustom[0].probability < predCustom[1].probability) {
         predictions = []
         predictions = [
@@ -104,6 +104,7 @@ const App = () => {
           ]
         }
       }
+      console.log(predictions)
       setResults(predictions)
       setIsLoadingRes(false)
       await createTensorflow(predictions)
