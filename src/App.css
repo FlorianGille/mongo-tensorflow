@@ -116,8 +116,8 @@ input {
   display: flex;
   justify-content: space-between;
   background-color: #e8e8e8;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
   margin-top: 25px;
   border-radius: 5px;
   animation: slide-out-right 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
